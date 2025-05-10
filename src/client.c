@@ -40,29 +40,38 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	printf("Enter a string: ");
-	if (fgets(buffer, BUF_SIZE, stdin) == NULL) {
-		perror("fgets");
-		close(sock);
-		return 1;
-	}
-	buffer[strcspn(buffer, "\n")] = 0;
+	printf("Connected to server. Type messages (type 'exit' to quit):\n");
 
-	if (send(sock, buffer, strlen(buffer), 0) == -1) {
-		perror("send");
-		close(sock);
-		return 1;
+	while (1)
+	{
+		printf("You: ");
+		if (fgets(buffer, BUF_SIZE, stdin) == NULL)
+			break;
+
+		buffer[strcspn(buffer, "\n")] = 0;
+
+		if (send(sock, buffer, strlen(buffer), 0) == -1)
+		{
+			perror("send");
+			break;
+		}
+
+		if (strcmp(buffer, "exit") == 0)
+			break;
+
+		memset(buffer, 0, BUF_SIZE);
+		ssize_t recv_len = recv(sock, buffer, BUF_SIZE - 1, 0);
+		if (recv_len <= 0)
+		{
+			perror("recv");
+			break;
+		}
+
+		buffer[recv_len] = 0;
+		printf("Server: %s\n", buffer);
 	}
 
-	memset(buffer, 0, BUF_SIZE);
-	if (recv(sock, buffer, BUF_SIZE - 1, 0) == -1) {
-		perror("recv");
-		close(sock);
-		return 1;
-	}
-
-	printf("Modified string from server: %s\n", buffer);
+	printf("Connection closed.\n");
 	close(sock);
 	return 0;
 }
-
